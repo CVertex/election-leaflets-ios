@@ -1,0 +1,8 @@
+* model domain
+
+Video and Playlist
+
+
+
+http://web.me.com/dianavandel/Site/Welcome_files/playlist.plist
+http://web.me.com/dianavandel/Site/Welcome_files/video.plist

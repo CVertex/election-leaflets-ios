@@ -1,0 +1,460 @@
+#!/usr/bin/env python
+# This Python file uses the following encoding: utf-8
+
+######################################################################
+#
+# Ad Hoc App Packager (adhoc) Version 1.0 by Aral Balkan
+# Copyright (c) 2009 Aral Balkan. http://aralbalkan.com
+# Released under the open source MIT License.
+#
+# Packages an Ad Hoc distribution. 
+#
+# See readme.markdown for usage instructions.
+#
+######################################################################
+
+import os
+import sys
+import re
+
+version = "1.0"
+
+# The exit status for success in Unix system utilities is zero.
+SUCCESS = 0
+
+#
+# ASCII Art baby. Old school command-line eye-candy :)  
+# (Yes, so I apparently have too much time on my hands.)
+#
+def boxTerminal(boxWidth, isTop=True):
+	if silent: return;
+	str = ""
+	str += "┌" if isTop else "└"
+	for i in range(0, boxWidth-2):
+		str += "─"
+	str += "┐" if isTop else "┘"
+	print str
+
+def boxPrint(msg, boxWidth, padding=2):
+	if silent: return;
+	str = ""
+	maxMsgLength = boxWidth - 2*padding
+	msgLength = len(msg)
+	if msgLength > maxMsgLength:
+		# Message too wide, return.
+		return msg
+	str = "│"
+	# Note: only left-aligned text is supported.
+	for i in range(0, padding):
+		str += " "
+	str += msg
+	paddingRight = boxWidth - len(str) + padding - 1
+	for i in range(0, paddingRight):
+		str += " "
+	str += "│"
+	print str
+	
+def boxDivider(boxWidth):
+	if silent: return;
+	str = "├"
+	for i in range(0, boxWidth-2):
+		str += "─"
+	str += "┤"
+	print str
+	
+def flushPrint(msg):
+	if silent: return;
+	# Print a message immediately to the screen without newlines or spaces.
+	sys.stdout.write(msg)
+	sys.stdout.flush()	
+	
+def updateProgress():
+	if silent: return;	
+	flushPrint("▣")
+	
+def usage():
+	print "Usage: ./adhoc/package [-s|--silent] [ConfigurationName]"	
+	
+#
+# Batch
+#
+
+#
+# Parse options
+#
+
+import getopt, sys
+
+try:
+	opts, args = getopt.getopt(sys.argv[1:], "s", ["silent"])
+except getopt.GetoptError, err:
+	print str(err)
+	usage()
+	sys.exit(2)
+silent=False
+for o, a in opts:
+	if o in ("-s", "--silent"):
+		silent = True
+	else:
+		assert False, "unhandled option"
+
+#
+# Use either the default Configuration name or the one 
+# provided by the user.
+#
+numArgs = len(args)
+if numArgs == 0:
+	configurationName = "Distribution"
+elif numArgs == 1:
+	configurationName = args[0]
+else:
+	print "Error: Incorrect syntax: too many arguments."
+	exit(2)
+
+#
+# Find the Xcode project and store its name.
+#
+
+xcodeFileName = os.popen('find *.xcodeproj -maxdepth 0 2>/dev/null').read().strip()
+
+if xcodeFileName == "":
+	print "Error: Could not find your Xcode project."
+	print "Fix: Copy the adhoc folder to your Xcode project folder and run it from there with ./adhoc/package"
+	exit(1)
+
+# Strip the extension to get the project name.
+projectName = xcodeFileName[0:-10]
+
+#
+# Get the App version from from the pList file.
+#
+
+infoPListFileName = "%s-Info.plist" % projectName
+infoPList = open(infoPListFileName).read()
+
+appVersionRegex = re.compile("CFBundleVersion<\/key>\n\t<string>(.*?)<\/string>")
+appVersionRegexResults = re.findall(appVersionRegex, infoPList)
+numAppVersionRegexResults = len(appVersionRegexResults)
+
+if numAppVersionRegexResults == 1:
+	appVersion = appVersionRegexResults[0]
+elif numAppVersionRegexResults > 1:
+	# Highly unlikely :) 
+	print "Error: Found more than one CFBundleVersion entry in %s" % infoPListFileName
+	exit(1)
+else:	
+	print "Error: Could not find CFBundleVersion in %s" % infoPListFileName
+	exit(1)
+	
+#
+# Preliminary sanity checks
+#	
+	
+appPath = "build/%s-iphoneos/%s.app" % (configurationName, projectName)
+dSYMPath = "build/%s-iphoneos/%s.app.dSYM" % (configurationName, projectName)
+
+if not os.path.exists(appPath):
+	print "Error: Could not find your app at %s." % appPath
+	exit(1)
+
+if not os.path.exists(dSYMPath):
+	print "Error: Could not find the dSYM file at %s." % dSYMPath
+	exit(1)
+
+iTunesArtworkExists = os.path.exists("iTunesArtwork")	
+if not iTunesArtworkExists:
+	# Not a fail condition: warn user.
+	print "Warning: iTunesArtwork file not found in root of the project folder. Your Ad Hoc distribution will not have an icon in iTunes."
+		
+# If the packages folder doesn't exist yet, create it.
+packagesFolder = "adhoc/packages/"
+if not os.path.exists(packagesFolder):
+	try:
+		os.mkdir(packagesFolder)
+	except OSError, e:
+		print "Error: Could not create the packages folder at %s" % packagesFolder
+		exit(1)
+
+#
+# Initial message.
+#
+	
+line1 = "Ad Hoc App Packager version %s" % version
+line2 = "Copyright © 2009 Aral Balkan. http://aralbalkan.com"
+line3 = "Released under the open source MIT License."
+line4 = "          App: %s" % projectName
+line5 = "      Version: %s" % appVersion
+line6 = "Configuration: %s" % configurationName
+
+boxTerminal(70)
+boxPrint(line1, 70)
+boxPrint("", 70)
+boxPrint(line2, 71)
+boxPrint(line3, 70)
+boxDivider(70)
+boxPrint("", 70)
+boxPrint(line4, 70)
+boxPrint(line5, 70)
+boxPrint(line6, 70)
+
+boxPrint("", 70)
+boxDivider(70)
+flushPrint("│  Working: 0% ")
+	
+#
+# Create the package folder for this distribution and copy the 
+# App file, iTuneArtwork, and dSYM file into it.
+#
+
+packageFolder = "adhoc/packages/%s" % appVersion
+if os.path.exists(packageFolder):
+	print "Error: Ad Hoc distribution for version %s already exists. Please update the version number in %s and make another build." % (appVersion, infoPListFileName)
+	exit(1)
+	
+updateProgress()
+
+try:
+	os.mkdir(packageFolder)
+except OSError, e:
+	print "Error: Could not create the package folder at %s" % packageFolder
+	exit(1)
+
+updateProgress()
+	
+copyAppCommand = "cp -rp %s %s &> /dev/null" % (appPath, packageFolder)
+copyDSYMCommand = "cp -rp %s %s &> /dev/null" % (dSYMPath, packageFolder)
+
+copyAppResult = os.system(copyAppCommand)
+if copyAppResult != SUCCESS:
+	print "Error: Could not copy the app."
+	print "Failed command: %s" % copyAppCommand
+	exit(1)
+
+updateProgress()
+
+copyDSYMResult = os.system(copyDSYMCommand)
+if copyDSYMResult != SUCCESS:
+	print "Error: Could not copy the dSYM file."
+	print "Failed command: %s" % copyDSYMCommand
+	exit(1)
+	
+updateProgress()
+
+if iTunesArtworkExists:
+	copyITunesArtworkCommand = "cp iTunesArtwork %s &> /dev/null" % packageFolder
+	copyITunesArtworkResult = os.system(copyITunesArtworkCommand)
+	if copyITunesArtworkResult != SUCCESS:
+		# Not a fail condition: warn user.
+		print "Warning: Could not copy your iTunesArtwork file."
+		print "Failed command: %s" % copyITunesArtworkCommand
+
+updateProgress()
+
+#
+# Find the correct mobile provisioning file from the project.pbxproj file.
+#
+
+pbxprojFileName = "%s.xcodeproj/project.pbxproj" % projectName
+pbxproj = open(pbxprojFileName).read()
+
+updateProgress()
+
+provisioningProfileUUIDRegEx = re.compile('(?s)/\* %s \*/ = {[^}]*?PROVISIONING_PROFILE.*? = "(.*?)";' % configurationName)
+provisioningProfileUUIDList = re.findall(provisioningProfileUUIDRegEx, pbxproj)
+
+numProvisioningProfileUUIDs = len(provisioningProfileUUIDList);
+if numProvisioningProfileUUIDs == 0:
+	print "Error: Could not find the Unique ID for provisioning profile for configuration %s in project %s." % (configurationName, pbxprojFileName)
+	if numArgs == 1:
+		print "(You didn't specify a configuration name argument so the default, \"Distribution\" was used. If your distribution profile has a different name, please run this script again and pass the name as the argument.)"
+	exit(1)
+elif numProvisioningProfileUUIDs > 1:
+	print "Error: Found more than one Unique ID for provisioning profile for configuration %s. This is more than likely due to a bug in this script. Please email aral@aralbalkan.com your %s file to receive support." % (configurationName, pbxprojFileName)
+	exit(1)
+	
+provisioningProfileUUID = provisioningProfileUUIDList[0]
+#print provisioningProfileUUID
+
+updateProgress()
+
+#
+# Find the provisioning profile with the matching UUID and copy it over to the package folder.
+#
+
+provisioningProfileFileName = os.path.expanduser("~/Library/MobileDevice/Provisioning Profiles/%s.mobileprovision" % provisioningProfileUUID)
+
+# Shell commands require the path with the space escaped. os.path.exists requires it without the
+# escaping. Otherwise, life is good.
+provisioningProfileFileNameForShell = os.path.expanduser("~/Library/MobileDevice/Provisioning\ Profiles/%s.mobileprovision" % provisioningProfileUUID)
+
+if os.path.exists(provisioningProfileFileName):
+	copyProvisioningProfileCommand = "cp %s %s &> /dev/null" % (provisioningProfileFileNameForShell, packageFolder)
+	
+	#print copyProvisioningProfileCommand
+	
+	copyProvisioningProfileResult = os.system(copyProvisioningProfileCommand)
+	if copyProvisioningProfileResult != SUCCESS:
+		# Not a fail condition: warn user.
+		print "Warning: Could not copy your provisioning profile. Make sure that you manually locate and send it to your beta testers."
+		print "Failed command: %s" % copyProvisioningProfileCommand
+		
+else:
+	
+	# Not a fail condition: warn user.
+	print "Warning: Could not find the mobile provisioning profile at %s. Make sure that you manually locate and send it to your beta testers." % provisioningProfileFileName
+
+updateProgress()
+
+#
+# Create the IPA
+#
+
+try:
+	os.chdir(packageFolder)
+except OSError, e:
+	print "Error: could not change to the package folder at %s." % packageFolder
+	exit(1)
+
+updateProgress()
+
+try:
+	os.mkdir("Payload")
+except OSError, e:
+	print "Error: could not make Payload folder."
+	exit(1)
+
+updateProgress()
+
+copyAppToPayloadCommand = "cp -rp \"%s\".app Payload/" % projectName
+
+copyAppToPayloadResult = os.system(copyAppToPayloadCommand)
+if copyAppToPayloadResult != SUCCESS:
+	print "Error: Could not copy the app to the Payload folder."
+	print "Failed command: %s" % copyAppToPayloadCommand
+	exit(1)
+
+updateProgress()
+
+zipIPACommand = 'zip -r "%s".ipa iTunesArtwork Payload &> /dev/null' % projectName
+zipIPAResult = os.system(zipIPACommand)
+if zipIPAResult != SUCCESS:
+	print "Error: Could not zip the Payload folder to make the IPA."
+	print "Failed command: %s" % zipIPACommand
+	exit(1)
+
+updateProgress()
+
+#
+# Remove unnecessary files and move files that aren't immediately relevant
+# into a different folder so they don't create noise and confuse the user.
+#
+
+try:
+	os.mkdir("Backups")
+	os.system("mv %s.app Backups" % projectName)
+	os.system("mv %s.app.dSYM Backups" % projectName)
+	os.system("mv iTunesArtwork Backups")
+	os.system("rm -rf Payload")
+except OSError, e:
+	print "Warning: couldn't move files to the Backups folder."
+	
+updateProgress()	
+
+#
+# Final message strings.
+#
+
+finalMessageLine1 = "Send the following files to your beta testers:"
+finalMessageLine2 = "  * %s.ipa" % projectName
+finalMessageLine3 = "  * %s.mobileprovision" % provisioningProfileUUID
+finalMessageLine4 = "Has this script saved you time?"
+finalMessageLine5 = "Say thank-you and help fuel my App Store addiction"
+finalMessageLine6 = "by donating a few bucks today at:"
+finalMessageLine7 = "http://bit.ly/4SADis"
+finalMessageLine8 = "(Good vibes & comments also welcome: just tweet @aral)"
+finalMessageLine9 = "Best of luck with your app! :)"
+
+#
+# Add a readme.html file in case the Finder obstructs the user's Terminal window.
+#
+	
+readmeHTML = """<html>
+<head>
+	<title>%s version %s (%s)</title>
+	<style type="text/css">
+		body { font-family: Helvetica, Arial, _sans; color:grey; background: white;}
+	</style>
+</head>
+<body>
+	<h1>%s</h1>
+	<p>%s<br>%s</p>
+	
+	<pre>%s
+%s
+%s</pre>
+			
+	<h2>%s</h2>
+	
+	<ul>
+			<li>%s</li>
+			<li>%s</li>
+	</ul>
+	
+	<h2>%s</h2>
+	
+	<p>%s: <a href="%s">donate a few bucks today</a>.</p>
+	
+	<p>%s<p>
+	
+	<p><strong>%s</strong></p>
+	
+		
+</body>
+</html>
+"""	% (	projectName, appVersion, configurationName, 
+	line1, line2.replace("©", "&copy;").replace("http://aralbalkan.com", '<a href="http://aralbalkan.com">http://aralbalkan.com</a>'), line3,
+	line4, line5, line6,
+	finalMessageLine1, finalMessageLine2.replace("  * ", ""), finalMessageLine3.replace("  * ", ""),
+	finalMessageLine4, 
+	finalMessageLine5, finalMessageLine7, #skipped 6 on purpose 
+	finalMessageLine8.replace("@aral", '<a href="http://twitter.com/aral">@aral</a>'), finalMessageLine9,
+)	
+
+open("readme.html", "w").write(readmeHTML)
+
+updateProgress()
+
+# Open the readme.html file.
+os.system("open readme.html")
+
+# Open the folder in Finder to make it easier for the user to find the files.
+os.system("open .")
+	
+#
+# That's all folks!
+#
+
+if not silent:
+	sys.stdout.write("  100% Done!                            │\n")
+
+boxDivider(70)
+boxPrint("", 70)
+boxPrint(finalMessageLine1, 70)
+boxPrint("", 70)
+boxPrint(finalMessageLine2, 70)
+boxPrint(finalMessageLine3, 70)
+boxPrint("", 70)
+boxDivider(70)
+boxPrint("", 70)
+boxPrint(finalMessageLine4, 70)
+boxPrint("", 70)
+boxPrint(finalMessageLine5, 70)
+boxPrint(finalMessageLine6, 70)
+boxPrint("", 70)
+boxPrint(finalMessageLine7, 70)
+boxPrint("", 70)
+boxPrint(finalMessageLine8, 70)
+boxPrint("", 70)
+boxPrint(finalMessageLine9, 70)
+boxPrint("", 70)
+boxTerminal(70, False)
