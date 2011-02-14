@@ -1,12 +1,8 @@
 #import "AppDelegate.h"
-#import "TabBarController.h"
 
 #import "HomeController.h"
 #import "UploadController.h"
 
-#import "PlaylistController.h"
-#import "VideoPlaylistController.h"
-#import "VideoDetailController.h"
 #import "Helper.h"
 #import "Upload.h"
 #import "HasManagedObjectContext.h"

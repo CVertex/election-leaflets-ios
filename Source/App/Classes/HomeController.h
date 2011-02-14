@@ -11,10 +11,11 @@
 #import <Three20UI/Three20UI.h>
 #import <Three20UI/Three20UI+Additions.h>
 #import <Three20Style/Three20Style.h>
+#import "ASIFormDataRequest.h"
 
 
-@interface HomeController : TTViewController {
-
+@interface HomeController : TTViewController <ASIHTTPRequestDelegate, ASIProgressDelegate> {
+	ASIFormDataRequest* _uploadRequest;
 }
 
 @end

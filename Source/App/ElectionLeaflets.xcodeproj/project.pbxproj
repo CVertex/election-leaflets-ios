@@ -60,6 +60,7 @@
 		B1793ED8130294D80066EB75 /* Reachability.m in Sources */ = {isa = PBXBuildFile; fileRef = B1793ED7130294D80066EB75 /* Reachability.m */; };
 		B1793F751302956E0066EB75 /* libxml2.2.7.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B1793F741302956E0066EB75 /* libxml2.2.7.3.dylib */; };
 		B1793F771302956E0066EB75 /* libz.1.2.3.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = B1793F761302956E0066EB75 /* libz.1.2.3.dylib */; };
+		B19609201307E42D00F7CF69 /* sample.jpg in Resources */ = {isa = PBXBuildFile; fileRef = B196091F1307E42D00F7CF69 /* sample.jpg */; };
 		B1CBEF58110CB4FF00456063 /* TODO.txt in Resources */ = {isa = PBXBuildFile; fileRef = B1CBEF57110CB4FF00456063 /* TODO.txt */; };
 		B1FAE6B1121502AA0073D2B2 /* Uploads.xcdatamodel in Sources */ = {isa = PBXBuildFile; fileRef = B1FAE6B0121502AA0073D2B2 /* Uploads.xcdatamodel */; };
 		B1FAE6B4121502E20073D2B2 /* Upload.m in Sources */ = {isa = PBXBuildFile; fileRef = B1FAE6B3121502E20073D2B2 /* Upload.m */; };
@@ -573,6 +574,7 @@
 		B1793ED7130294D80066EB75 /* Reachability.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; name = Reachability.m; path = ../ASIHTTPRequest/External/Reachability/Reachability.m; sourceTree = SOURCE_ROOT; };
 		B1793F741302956E0066EB75 /* libxml2.2.7.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libxml2.2.7.3.dylib; path = usr/lib/libxml2.2.7.3.dylib; sourceTree = SDKROOT; };
 		B1793F761302956E0066EB75 /* libz.1.2.3.dylib */ = {isa = PBXFileReference; lastKnownFileType = "compiled.mach-o.dylib"; name = libz.1.2.3.dylib; path = usr/lib/libz.1.2.3.dylib; sourceTree = SDKROOT; };
+		B196091F1307E42D00F7CF69 /* sample.jpg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = sample.jpg; sourceTree = "<group>"; };
 		B1CBEF57110CB4FF00456063 /* TODO.txt */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = TODO.txt; sourceTree = "<group>"; };
 		B1FAE6B0121502AA0073D2B2 /* Uploads.xcdatamodel */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = wrapper.xcdatamodel; path = Uploads.xcdatamodel; sourceTree = "<group>"; };
 		B1FAE6B2121502E20073D2B2 /* Upload.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Upload.h; sourceTree = "<group>"; };
@@ -624,6 +626,7 @@
 				B170DFA112140E7E00935CAA /* Domain */,
 				B170DFAD12140E8F00935CAA /* Helpers */,
 				B170DFAF12140EC700935CAA /* Views */,
+				B12BFB5611FDA7AE0049923C /* Api.h */,
 				BE8FCAB710017846000767AD /* AppDelegate.h */,
 				BE8FCAB810017846000767AD /* AppDelegate.m */,
 			);
@@ -662,6 +665,7 @@
 		29B97317FDCFA39411CA2CEA /* Resources */ = {
 			isa = PBXGroup;
 			children = (
+				B196091F1307E42D00F7CF69 /* sample.jpg */,
 				B15F5CDD121C0BF1004679A8 /* example.jpg */,
 				B12B009611FF0C0B0049923C /* icon.png */,
 				B12BFCD711FDC7060049923C /* placeholder.png */,
@@ -698,7 +702,6 @@
 			children = (
 				B170DFB012140EE700935CAA /* DataSources */,
 				B170DFAE12140EB600935CAA /* Models */,
-				B12BFB5611FDA7AE0049923C /* Api.h */,
 				B1FAE6B0121502AA0073D2B2 /* Uploads.xcdatamodel */,
 				B1FAE6B2121502E20073D2B2 /* Upload.h */,
 				B1FAE6B3121502E20073D2B2 /* Upload.m */,
@@ -1481,6 +1484,7 @@
 				B12B009711FF0C0B0049923C /* icon.png in Resources */,
 				B12B013C11FF18620049923C /* Entitlements.plist in Resources */,
 				B15F5CDE121C0BF1004679A8 /* example.jpg in Resources */,
+				B19609201307E42D00F7CF69 /* sample.jpg in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

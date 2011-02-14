@@ -7,8 +7,12 @@
  *
  */
 
-#define API_BASE @"http://ec2-204-236-186-66.us-west-1.compute.amazonaws.com"
+#define API_BASE @"http://dev.electionleaflets.org.au/"
 #define API(__PATH) ([NSString stringWithFormat:@"%@%@",API_BASE,__PATH])
+
+
+#define API_ADD_UPLOAD API(@"/addupload")
+#define API_ADD_UPLOAD_POST API(@"/addupload.php")
 
 
 #define CACHE_EXPIRATION_AGE_IN_SECONDS (60.0*60.0*24) // 1 day
